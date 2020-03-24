@@ -1,3 +1,4 @@
+//https://app.codility.com/cert/view/certDJZUGA-EHVKF3AHWJ2QJ4S9/
 // you can use includes, for example:
 // #include <algorithm>
 #include<bits/stdc++.h>
@@ -5,6 +6,7 @@
 // cout << "this is a debug message" << endl;
 #define pb push_back
 using ll = unsigned long long int;
+#define INF std::numeric_limits<int>::min()
 #define sc static_cast<ll>
 ll solution(vector<int> &H) {
 	// write your code in C++14 (g++ 6.2.0)
@@ -19,105 +21,98 @@ ll solution(vector<int> &H) {
 	ll res = 0;
 	if (ptr->second.front() == 0) {
 		int j = ptr->second.back();
-		int dist1 = j + 1;
-		res += sc(dist1) * sc(ptr->first);
-		auto ptr2 = next(ptr);
-		while (ptr2 != end(bst)) {
-			auto it = std::upper_bound(begin(ptr2->second), end(ptr2->second), j);
-			if (it != end(ptr2->second)) {
-				res += sc(n - j - 1)*sc(ptr2->first);
-				break;
+		if (j == (n - 1)) {
+			res = sc(n)*sc(ptr->first);
+			return res;
+		}
+		vector<int> right(n + 1, INF);
+		ll subres = sc(j + 1)*sc(ptr->first);
+		res = INF;
+		for (int k = n - 1; k >= j; --k) {
+			right[k] = max(H[k], right[k + 1]);
+		}
+		for (int k = j; k < n; ++k) {
+			if (k != (n - 1)) {
+				ll part1 = subres + sc(k - j)*sc(ptr->first);
+				ll rightH = right[k + 1];
+				ll part2 = rightH * sc(n - k - 1);
+				//cout<<part1<<" "<<part2<<endl;
+				if (part1 + part2 < res)res = part1 + part2;
 			}
-			++ptr2;
+			else if (k == (n - 1)) {
+				ll part1 = subres + sc(k - j)*sc(ptr->first);
+				ll part2 = 0;
+				//cout<<part1<<" "<<part2<<endl;
+				if (part1 + part2 < res)res = part1 + part2;
+			}
 		}
 		return res;
 	}
-	ll pos1 = 0, pos2 = 0;
-	ll pos3 = std::numeric_limits<ll>::max();
-	//possibility 1: cover to the right
 	int i = ptr->second.front();
-	int dist1 = n - i;
-	ll sub1 = sc(ptr->first)*sc(dist1);
-	pos1 = sub1;
-	auto ptr2 = next(ptr, 1);
-	while (ptr2 != end(bst)) {
-		if (ptr2->second.front() < i) {
-			pos1 += sc(i) * (ptr2->first);
-			break;
-		}
-		++ptr2;
-	}
-	//possibility2: cover to the left
-	pos2 = sc(ptr->first)*sc(ptr->second.back() + 1);
-	//cout<<pos2<<endl;
-	ptr2 = next(ptr, 1);
 	int j = ptr->second.back();
-	while (ptr2 != end(bst)) {
-		auto it = upper_bound(begin(ptr2->second), end(ptr2->second), j);
-		if (it != end(ptr2->second)) {
-			pos2 += sc(n - j - 1)*sc(ptr2->first);
-			break;
+	res = INF;
+	if (j == (n - 1)) {
+		ll subres = sc(n - i)*sc(ptr->first);
+		vector<int> left(n, INF);
+		for (int k = 0; k <= i; ++k) {
+			if (k == 0)left[k] = H[k];
+			else {
+				left[k] = max(H[k], left[k - 1]);
+			}
 		}
-		++ptr2;
+		for (int k = i; k >= 0; --k) {
+			if (k != 0) {
+				ll part1 = subres + sc(i - k)*sc(ptr->first);
+				ll part2 = sc(left[k - 1])*sc(k);
+				if (part1 + part2 < res)res = part1 + part2;
+			}
+			else if (k == 0) {
+				ll part1 = subres + sc(i)*sc(ptr->first);
+				ll part2 = 0;
+				if (part1 + part2 < res)res = part1 + part2;
+			}
+		}
+		return res;
 	}
-	ptr2 = next(ptr, 1);
-	while (ptr2 != end(bst)) {
-		ll sub = numeric_limits<ll>::max();
-		auto it = std::lower_bound(ptr2->second.begin(), ptr2->second.end(), i);
-		int low, high;
-		bool inside = false;
-		if (it != end(ptr2->second) && *it <= j) {
-			low = i, high = j;
-			if (ptr2->second.front() >= i && ptr2->second.back() <= j)inside = true;
-		}
-		else if (it == end(ptr2->second)) {
-			low = ptr2->second.back();
-			if (low + 1 == i) {
-				int m = int(ptr2->second.size());
-				int k = m - 2;
-				int prev = low;
-				while (k >= 0) {
-					if (ptr2->second[k] != (prev - 1))break;
-					prev = ptr2->second[k];
-					--k;
-				}
-				if (k < 0)inside = true, low = ptr2->second.front();
-			}
-			high = j;
-		}
-		else if (*it > j) {
-			low = i;
-			high = ptr2->second.front();
-			if (high == (j + 1)) {
-				int m = int(ptr2->second.size());
-				int k = 1;
-				int prev = high;
-				while (k < m) {
-					if (ptr2->second[k] != (prev + 1)) {
-						break;
-					}
-					prev = ptr2->second[k];
-					++k;
-				}
-				if (k == m)inside = true, high = ptr2->second.back();
-			}
-		}
-		//cout<<low<<" "<<high<<endl;
-		auto ptr3 = next(ptr2, 1);
-		if (ptr3 != end(bst) && inside) {
-			int Hdiff = ptr->first - ptr3->first;
-			sub = sc(high - low + 1)*sc(Hdiff) + sc(n)*sc(ptr3->first);
-			//cout<<sub<<" "<<low<<" "<<high<<endl;
-		}
+	vector<int> right(n + 1, INF);
+	vector<int> left(n, INF);
+	for (int k = n - 1; k >= j; --k) {
+		right[k] = max(H[k], right[k + 1]);
+	}
+	for (int k = 0; k <= i; ++k) {
+		if (k == 0)left[k] = H[k];
 		else {
-			int Hdiff = ptr->first - ptr2->first;
-			sub = sc(high - low + 1)*sc(Hdiff) + sc(n)*sc(ptr2->first);
+			left[k] = max(H[k], left[k - 1]);
 		}
-		//++ptr2;
-		//cout<<sub<<" "<<low<<" "<<high<<endl;
-		pos3 = min(pos3, sub);
-		break;
 	}
-	//cout<<pos1<<" "<<pos2<<" "<<pos3<<endl;
-	return min(pos1, min(pos2, pos3));
+	ll subres = sc(j - i + 1)*sc(ptr->first);
+	for (int u = j; u < n; ++u) {
+		for (int v = i; v >= 0; --v) {
+			if (u != (n - 1) && v != 0) {
+				ll part1 = subres + sc(u - j)*sc(ptr->first) + sc(i - v)*sc(ptr->first);
+				int fromright = right[u + 1];
+				int fromleft = left[v - 1];
+				ll part2 = sc(n)*sc(max(fromright, fromleft));
+				if (part1 + part2 < res)res = part1 + part2;
+			}
+			else if (u == (n - 1)) {
+				ll part1 = subres + sc(u - j)*sc(ptr->first);
+				ll part2 = 0;
+				if (v == 0)part2 = sc(i)*sc(ptr->first);
+				else {
+					part1 += sc(i - v)*sc(ptr->first);
+					int fromleft = left[v - 1];
+					part2 = sc(fromleft)*sc(v);
+				}
+				if (part1 + part2 < res)res = part1 + part2;
+			}
+			else if (v == 0) {
+				ll part1 = subres + sc(i)*sc(ptr->first) + sc(u - j)*sc(ptr->first);
+				int fromright = right[u + 1];
+				ll part2 = sc(n - u - 1)*sc(fromright);
+				if (part1 + part2 < res)res = part1 + part2;
+			}
+		}
+	}
+	return res;
 }
